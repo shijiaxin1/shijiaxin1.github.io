@@ -1,0 +1,251 @@
+/*
+Button.h
+	Creat Buttons
+	Wait Until Button be touched
+	[use easily]
+
+
+CopyRight	@UniCoder 2020
+Writer		UniCoder  _Kerman
+WebSite		http://unicoder.icoc.vc
+*/
+
+
+#ifndef BUTTON_H
+#define BUTTON_H
+
+
+#include<windows.h>
+#include<iostream>
+#include<cstdlib>
+#include<cstring>
+#include<cmath>
+#include<conio.h>
+using namespace std;	//Using by yourself
+
+
+
+#define KEY_DOWN(VK_NONAME) ((GetAsyncKeyState(VK_NONAME) & 0x8000) ? 1:0)
+
+
+
+#define BT_BIG (__STYLE)0	//┃ or │
+#define BT_THIN (__STYLE)1	//┇ or ┆
+
+#define BT_REAL (__STYLE)0	//┃ or │
+#define BT_DOT (__STYLE)2	//┇ or ┆
+
+#define BT_TOUCH (__STYLE)10
+#define BT_INPUT (__STYLE)20	//==InputBox() in VisualBasic
+
+#define BT_X (__STYLE)100
+#define BT_Y (__STYLE)200
+
+const string __BUTTON_LINE_table[6][4]= {{"┃","│","┇","┆"},{"━","─","┅","┄"},{"┏","┌","┏","┌"},{"┗","└","┗","└"},{"┛","┘","┛","┘"},{"┓","┐","┓","┐"}};
+const unsigned int __BUTTON_CHAR_width=6;
+const unsigned int __BUTTON_CHAR_height=12;
+
+
+typedef unsigned int __STYLE;
+typedef string STR_TABLE[100];
+
+struct BUTTON {
+	bool __BUTTON_used=false;
+	unsigned int __BUTTON_x;
+	unsigned int __BUTTON_y;
+	unsigned int __BUTTON_width;
+	unsigned int __BUTTON_height;
+	string __BUTTON_text;
+	__STYLE __BUTTON_type;
+	__STYLE __BUTTON_line;
+};
+
+
+
+BUTTON __BUTTON_all[100];
+int __BUTTON_ButtonNum=1;
+
+
+void ButtonRect(int,int,int,int,int,int,int,int,STR_TABLE,__STYLE);
+void ButtonLine(int,int,int,int,int,int,__STYLE,__STYLE);
+void ButtonSet(int,__STYLE,__STYLE,int,int,int,int);
+void ButtonPlaceCursor(const int,const int);
+void ButtonShow(int);
+void ButtonShowAll(void);
+int ButtonTouch(void);
+
+void ButtonRect(int startX,int startY,int numW,int numH,int buttonW,int buttonH,int spaceW,int spaceH,STR_TABLE buttonTEXT/*Form [0]*/,__STYLE lineSTYLE) {
+	int k=__BUTTON_ButtonNum;
+	for(int i=0; i<numH; i++) {
+		for(int j=0; j<numW; j++) {
+			if(lineSTYLE<0||lineSTYLE>3) {
+				SetLastError(ERROR_INVALID_PARAMETER);
+				MessageBox(NULL,"ERROR","Button Error(Bad line style)",MB_OK|MB_ICONERROR);
+				continue;
+			}
+			int ThisID=k;
+			k++;
+
+			__BUTTON_all[ThisID].__BUTTON_used=true;
+			__BUTTON_all[ThisID].__BUTTON_x=startX+i*(buttonH+spaceH);
+			__BUTTON_all[ThisID].__BUTTON_y=startY+j*(buttonW+spaceW);
+			__BUTTON_all[ThisID].__BUTTON_width=buttonW;
+			__BUTTON_all[ThisID].__BUTTON_height=buttonH;
+			__BUTTON_all[ThisID].__BUTTON_text=buttonTEXT[ThisID-1];
+			__BUTTON_all[ThisID].__BUTTON_type=BT_TOUCH;
+			__BUTTON_all[ThisID].__BUTTON_line=lineSTYLE;
+		}
+	}
+	__BUTTON_ButtonNum+=numW*numH;
+}
+
+void ButtonLine(int start_X,int start_Y,int button_NUM,int button_W,int button_H,int button_SPACE,STR_TABLE button_TEXT,__STYLE line_STYLE,__STYLE button_DIRECTION) {
+	switch(button_DIRECTION) {
+		case BT_X: {
+			ButtonRect(start_X,start_Y,button_NUM,1,button_W,button_H,button_SPACE,0,button_TEXT,line_STYLE);
+			break;
+		}
+		case BT_Y: {
+			ButtonRect(start_X,start_Y,1,button_NUM,button_W,button_H,0,button_SPACE,button_TEXT,line_STYLE);
+			break;
+		}
+		default: {
+			SetLastError(ERROR_INVALID_PARAMETER);
+			MessageBox(NULL,"ERROR","Button Error(Bad DIRECTION)",MB_OK|MB_ICONERROR);
+			break;
+		}
+	}
+}
+
+void ButtonSet(int Button_ID,__STYLE Button_type,__STYLE Button_line,int Button_X,int Button_Y,int Button_Width,int Button_Height,string Button_Text) {
+	if(Button_line<0||Button_line>3) {
+		SetLastError(ERROR_INVALID_PARAMETER);
+		MessageBox(NULL,"ERROR","Button Error(Bad line style)",MB_OK|MB_ICONERROR);
+		Button_line=BT_BIG+BT_REAL;
+	}
+	if(Button_type!=10&&Button_type!=20) {
+		SetLastError(ERROR_INVALID_PARAMETER);
+		MessageBox(NULL,"ERROR","Button Error(Bad button type)",MB_OK|MB_ICONERROR);
+		Button_type=BT_TOUCH;
+	}
+	__BUTTON_all[Button_ID].__BUTTON_used=true;
+	__BUTTON_all[Button_ID].__BUTTON_type=Button_type;
+	__BUTTON_all[Button_ID].__BUTTON_line=Button_line;
+	__BUTTON_all[Button_ID].__BUTTON_x=Button_X;
+	__BUTTON_all[Button_ID].__BUTTON_y=Button_Y;
+	__BUTTON_all[Button_ID].__BUTTON_width=Button_Width;
+	__BUTTON_all[Button_ID].__BUTTON_height=Button_Height;
+	__BUTTON_all[Button_ID].__BUTTON_text=Button_Text;
+	__BUTTON_ButtonNum++;
+}
+
+void ButtonPlaceCursor(const int Place_x, const int Place_y) { //放置光标
+	COORD PlaceCursorHere;
+	PlaceCursorHere.X = Place_y*2;
+	PlaceCursorHere.Y = Place_x;
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), PlaceCursorHere);
+}
+
+void ButtonShow(int Button_ID) {
+	int TEMP_tx=__BUTTON_all[Button_ID].__BUTTON_x;
+	int TEMP_ty=__BUTTON_all[Button_ID].__BUTTON_y;
+	int TEMP_w=__BUTTON_all[Button_ID].__BUTTON_width;
+	int TEMP_h=__BUTTON_all[Button_ID].__BUTTON_height;
+	int TEMP_line=__BUTTON_all[Button_ID].__BUTTON_line;
+	int TEMP_ux=TEMP_tx+TEMP_h-1;
+	int TEMP_uy=TEMP_ty+TEMP_w-1;
+	int len=__BUTTON_all[Button_ID].__BUTTON_text.length();
+
+
+	ButtonPlaceCursor(TEMP_tx,TEMP_ty);//2
+	cout<<__BUTTON_LINE_table[2][TEMP_line];
+
+	ButtonPlaceCursor(TEMP_ux,TEMP_ty);//3
+	cout<<__BUTTON_LINE_table[3][TEMP_line];
+
+	ButtonPlaceCursor(TEMP_ux,TEMP_uy);//4
+	cout<<__BUTTON_LINE_table[4][TEMP_line];
+
+	ButtonPlaceCursor(TEMP_tx,TEMP_uy);//5
+	cout<<__BUTTON_LINE_table[5][TEMP_line];
+
+
+	for(int i=TEMP_tx+1; i<TEMP_ux; i++) {//0
+		ButtonPlaceCursor(i,TEMP_ty);
+		cout<<__BUTTON_LINE_table[0][TEMP_line];
+	}
+
+
+	for(int i=TEMP_tx+1; i<TEMP_ux; i++) {//0
+		ButtonPlaceCursor(i,TEMP_uy);
+		cout<<__BUTTON_LINE_table[0][TEMP_line];
+	}
+
+	ButtonPlaceCursor(TEMP_tx,TEMP_ty+1);//1
+	for(int i=0; i<TEMP_w-2; i++) {
+		cout<<__BUTTON_LINE_table[1][TEMP_line];
+	}
+
+	ButtonPlaceCursor(TEMP_ux,TEMP_ty+1);//1
+	for(int i=0; i<TEMP_w-2; i++) {
+		cout<<__BUTTON_LINE_table[1][TEMP_line];
+	}
+
+
+	ButtonPlaceCursor(TEMP_tx+ceil(((float)TEMP_h-2.0)/2),TEMP_ty+1);
+	cout<<__BUTTON_all[Button_ID].__BUTTON_text;
+
+
+	ButtonPlaceCursor(0,0);
+}
+
+void ButtonShowAll(void) {
+	for(int i=1; i<__BUTTON_ButtonNum; i++) {
+		if(__BUTTON_all[i].__BUTTON_used) {
+			ButtonShow(i);
+		}
+	}
+}
+
+int ButtonTouch(void) { //检测按下的按钮
+	POINT __TEMP_thisP;
+	HWND __TEMP_thisHWND=GetForegroundWindow();
+
+	ButtonPlaceCursor(10,10);
+
+	while(1) {
+		GetCursorPos(&__TEMP_thisP);
+		ScreenToClient(__TEMP_thisHWND,&__TEMP_thisP);
+		if(KEY_DOWN(MOUSE_MOVED)) {
+			for(int i=1; i<__BUTTON_ButtonNum; i++) {
+				if(__BUTTON_all[i].__BUTTON_used) {
+					int TEMP_tx=__BUTTON_all[i].__BUTTON_x;
+					int TEMP_ty=__BUTTON_all[i].__BUTTON_y;
+					int TEMP_w=__BUTTON_all[i].__BUTTON_width;
+					int TEMP_h=__BUTTON_all[i].__BUTTON_height;
+					int TEMP_ux=TEMP_tx+TEMP_h-1;
+					int TEMP_uy=TEMP_ty+TEMP_w-1;
+					int TEMP_ptx=__BUTTON_CHAR_width*2*TEMP_tx+__BUTTON_CHAR_width;
+					int TEMP_pty=__BUTTON_CHAR_height*TEMP_ty+__BUTTON_CHAR_height/2;
+					int TEMP_pux=__BUTTON_CHAR_width*2*TEMP_ux+__BUTTON_CHAR_width;
+					int TEMP_puy=__BUTTON_CHAR_height*TEMP_uy+__BUTTON_CHAR_height/2;
+					
+					if(i==1)
+					cout<<TEMP_ptx<<'*'<<TEMP_pty<<'|'<<TEMP_pux<<'*'<<TEMP_puy<<endl;
+					
+					if(TEMP_ptx<__TEMP_thisP.y&&__TEMP_thisP.y<=TEMP_pux) {
+						if(TEMP_pty<__TEMP_thisP.x&&__TEMP_thisP.x<=TEMP_puy) {
+							__BUTTON_ButtonNum=1;
+							for(int k=0; k<100; k++) {
+								__BUTTON_all[k].__BUTTON_used=false;
+							}
+							return i;
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+#endif  //#ifndef BUTTON_H
